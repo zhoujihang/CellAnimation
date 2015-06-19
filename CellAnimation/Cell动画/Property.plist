@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>teamOrder</key>
+		<integer>1</integer>
+		<key>teamName</key>
+		<string>青岛鲁能</string>
+	</dict>
+	<dict>
+		<key>teamOrder</key>
+		<integer>2</integer>
+		<key>teamName</key>
+		<string>天津泰达</string>
+	</dict>
+	<dict>
+		<key>teamOrder</key>
+		<integer>3</integer>
+		<key>teamName</key>
+		<string>河南建业</string>
+	</dict>
+	<dict>
+		<key>teamOrder</key>
+		<integer>4</integer>
+		<key>teamName</key>
+		<string>北京国安</string>
+	</dict>
+	<dict>
+		<key>teamOrder</key>
+		<integer>5</integer>
+		<key>teamName</key>
+		<string>广州恒大</string>
+	</dict>
+	<dict>
+		<key>teamOrder</key>
+		<integer>6</integer>
+		<key>teamName</key>
+		<string>上海申花</string>
+	</dict>
+</array>
+</plist>
