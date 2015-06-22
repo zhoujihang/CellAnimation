@@ -19,8 +19,7 @@
 
 @property(nonatomic,strong)NSMutableArray *oldArray;
 @property(nonatomic,strong)NSMutableArray *refreshArray;
-//@property(nonatomic,strong)NSMutableArray *nArr;
-@property (nonatomic,strong) NSArray *oldArrayBeforeAnimate;   // 开始cell移动动画前保存最初的模型数组
+
 @end
 
 @implementation ViewController
@@ -39,13 +38,8 @@
 }
 
 - (void)cellAnimation{
-    // 开始cell移动动画前保存最初的模型数组
-    self.oldArrayBeforeAnimate = [NSArray arrayWithArray:self.oldArray];
-    if (self.oldArrayBeforeAnimate.count <1) return;
     
     NSLog(@"排序前：%@",self.oldArray);
-//    [self cellExchangeWithTeamName:[self.oldArrayBeforeAnimate[0] teamName] oldIndexBeforeAnimate:0];
-    
     // 将新数组排序
     [self cellExchangeWithTeamName:[self.refreshArray[0] teamName] refreshIndex:0];
     
@@ -73,8 +67,8 @@
     // 旧的的位置
     NSIndexPath *oldIndexPath = nil;
     if (oldModel){
+        // 并非新加入的球队
         oldIndexPath = [NSIndexPath indexPathForRow:[self.oldArray indexOfObject:oldModel] inSection:0];
-        
         if (oldIndexPath.row == newIndexPath.row){
             // 如果位置没变化直接开始下一个cell的移动
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -84,7 +78,6 @@
             });
             return;
         }
-        
     }else{
         // 新加入的球队,设置成旧模型中的最后一个，排名也暂时设置为最后一位
         [self.oldArray addObject:[newModel copy]];
@@ -94,7 +87,7 @@
         [self.tableView insertRowsAtIndexPaths:@[oldIndexPath] withRowAnimation:UITableViewRowAnimationFade];
     }
     
-    // 模型交换位置,并更新排名
+    // 模型交换位置,并更新球队的排名
     NSNumber *tempRange = [self.oldArray[oldIndexPath.row] teamOrder];
     [self.oldArray[oldIndexPath.row] setTeamOrder:newModel.teamOrder];
     [self.oldArray[newIndexPath.row] setTeamOrder:tempRange];
@@ -122,74 +115,6 @@
         });
     }];
 
-    
-}
-
-- (void)cellExchangeWithTeamName:(NSString *)teamName oldIndexBeforeAnimate:(NSInteger)oldIndex{
-    // 旧的模型
-    Model *oldModel = nil;
-    for (Model *model in self.oldArray) {
-        if ([model.teamName isEqualToString:teamName]) {
-            oldModel = model;
-            break;
-        }
-    }
-    // 旧的的位置
-    NSIndexPath *oldIndexPath = [NSIndexPath indexPathForRow:[self.oldArray indexOfObject:oldModel] inSection:0];
-    
-    // 新的模型
-    Model *newModel = nil;
-    for (Model *model in self.refreshArray) {
-        if ([model.teamName isEqualToString:teamName]) {
-            newModel = model;
-            break;
-        }
-    }
-    // 新的位置
-    NSIndexPath *newIndexPath = [NSIndexPath indexPathForRow:newModel.teamOrder.integerValue-1 inSection:0];
-    
-    if (oldIndexPath.row == newIndexPath.row){
-        // 如果位置没变化直接开始下一个cell的移动
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (oldIndex+1 <= self.oldArrayBeforeAnimate.count-1) {
-                [self cellExchangeWithTeamName:[self.oldArrayBeforeAnimate[oldIndex+1] teamName] oldIndexBeforeAnimate:oldIndex+1];
-            }
-        });
-        return;
-    }
-    
-    // 模型交换位置,并更新排名
-    NSNumber *tempRange = [self.oldArray[oldIndexPath.row] teamOrder];
-    [self.oldArray[oldIndexPath.row] setTeamOrder:@(newIndexPath.row+1)];
-    [self.oldArray[newIndexPath.row] setTeamOrder:tempRange];
-    [self.oldArray exchangeObjectAtIndex:oldIndexPath.row withObjectAtIndex:newIndexPath.row];
-    NSLog(@"排序后：%@",self.oldArray);
-    // 视图交换位置
-    [UIView animateWithDuration:0.6 animations:^{
-        [self.tableView moveRowAtIndexPath:oldIndexPath toIndexPath:newIndexPath];
-        if (newIndexPath.row > oldIndexPath.row) {
-            // 向下挪动     move方法不会触发 tableview的跟新视图的方法
-            [self.tableView moveRowAtIndexPath:[NSIndexPath indexPathForRow:newIndexPath.row-1 inSection:0] toIndexPath:oldIndexPath];
-        }else{
-            // 向上挪动
-            [self.tableView moveRowAtIndexPath:[NSIndexPath indexPathForRow:newIndexPath.row+1 inSection:0] toIndexPath:oldIndexPath];
-        }
-    } completion:^(BOOL finished) {
-        // 开始下一个cell的移动
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            // 动画完成后更新视图
-            [self.tableView reloadRowsAtIndexPaths:@[oldIndexPath,newIndexPath] withRowAnimation:UITableViewRowAnimationNone];
-            // 判断是否还需要继续
-            if (oldIndex+1 <= self.oldArrayBeforeAnimate.count-1) {
-                [self cellExchangeWithTeamName:[self.oldArrayBeforeAnimate[oldIndex+1] teamName] oldIndexBeforeAnimate:oldIndex+1];
-            }
-        });
-    }];
-}
-
-
-
-- (void)refreshDataSourceModelArr{
     
 }
 - (void)dealloc
@@ -254,22 +179,6 @@
     }
     return  _refreshArray;
 }
-//- (NSArray *)nArr
-//{
-//    if (!_nArr) {
-//        NSString *path = [[NSBundle mainBundle]pathForResource:@"NewArray.plist" ofType:nil];
-//        NSArray *arr = [NSArray arrayWithContentsOfFile:path];
-//        NSMutableArray *arrayModels = [NSMutableArray array];
-//        
-//        for (NSDictionary *dict in arr) {
-//            Model *model = [Model modelWithDict:dict];
-//            [arrayModels addObject:model];
-//        }
-//        _nArr = arrayModels;
-//    }
-//    return _nArr;
-//}
-
 - (BOOL)prefersStatusBarHidden
 {
     return YES;
