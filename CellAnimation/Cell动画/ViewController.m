@@ -9,7 +9,7 @@
 
 #import "ViewController.h"
 #import "Model.h"
-
+const static CGFloat kDurationTime=0.8;
 @interface ViewController ()<UITableViewDelegate,UITableViewDataSource>
 {
      NSIndexPath *destination;
@@ -42,7 +42,7 @@
     // 先清理已经被淘汰了的球队
     [self clearEliminatedTeam];
     // 再从旧的排名过渡到新的排名
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(kDurationTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self cellExchangeWithTeamName:[self.refreshArray[0] teamName] refreshIndex:0];
     });
     
@@ -78,7 +78,7 @@
         [reloadIndexPathMArr addObject:[NSIndexPath indexPathForRow:i inSection:0]];
     }
     
-    [UIView animateWithDuration:0.6 animations:^{
+    [UIView animateWithDuration:kDurationTime animations:^{
         [self.tableView deleteRowsAtIndexPaths:eliminatedIndexPathMArr withRowAnimation:UITableViewRowAnimationFade];
     } completion:^(BOOL finished) {
         [self.tableView reloadRowsAtIndexPaths:reloadIndexPathMArr withRowAnimation:UITableViewRowAnimationNone];
@@ -112,7 +112,7 @@
         oldIndexPath = [NSIndexPath indexPathForRow:[self.oldArray indexOfObject:oldModel] inSection:0];
         if (oldIndexPath.row == newIndexPath.row){
             // 如果位置没变化直接开始下一个cell的移动
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(kDurationTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 // 动画完成后更新视图
                 if (refreshIndex+1 <= self.refreshArray.count-1) {
                     [self cellExchangeWithTeamName:[self.refreshArray[refreshIndex+1] teamName] refreshIndex:refreshIndex+1];
@@ -141,11 +141,11 @@
     }
     NSLog(@"排序后：%@",self.oldArray);
     // 刷新cell视图
-    [UIView animateWithDuration:0.6 animations:^{
+    [UIView animateWithDuration:kDurationTime animations:^{
         [self.tableView moveRowAtIndexPath:oldIndexPath toIndexPath:newIndexPath];
     } completion:^(BOOL finished) {
         // 开始下一个cell的移动
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(kDurationTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             // 动画完成后更新视图
             [self.tableView reloadRowsAtIndexPaths:reloadIndexPathMArr withRowAnimation:UITableViewRowAnimationNone];
             // 判断是否还需要继续
