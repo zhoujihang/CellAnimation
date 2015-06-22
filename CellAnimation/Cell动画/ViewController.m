@@ -38,12 +38,41 @@
 }
 
 - (void)cellAnimation{
-    
     NSLog(@"排序前：%@",self.oldArray);
-    // 将新数组排序
-    [self cellExchangeWithTeamName:[self.refreshArray[0] teamName] refreshIndex:0];
+    [UIView animateWithDuration:0.6 animations:^{
+        // 先清理已经被淘汰了的球队
+        [self clearEliminatedTeam];
+    } completion:^(BOOL finished) {
+        // 再从旧的排名过渡到新的排名
+        [self cellExchangeWithTeamName:[self.refreshArray[0] teamName] refreshIndex:0];
+    }];
     
 }
+// 将未出现在新排名中的球队删掉
+- (void)clearEliminatedTeam{
+    NSMutableArray *eliminatedOldModel = [NSMutableArray array];
+    NSMutableArray *eliminatedIndexPathMArr = [NSMutableArray array];
+    for (int i=0;i<self.oldArray.count;i++) {
+        Model *oldModel = self.oldArray[i];
+        // 标记 oldModel 是否已经在新数组中被淘汰了
+        BOOL isEliminated = YES;
+        for (Model *newModel in self.refreshArray) {
+            if ([oldModel.teamName isEqualToString:newModel.teamName]) {
+                isEliminated = NO;
+                break;
+            }
+        }
+        if (isEliminated) {
+            // 已经淘汰了的球队
+            [eliminatedOldModel addObject:oldModel];
+            NSIndexPath *indexPath= [NSIndexPath indexPathForRow:i inSection:0];
+            [eliminatedIndexPathMArr addObject:indexPath];
+        }
+    }
+    [self.oldArray removeObjectsInArray:eliminatedOldModel];
+    [self.tableView deleteRowsAtIndexPaths:eliminatedIndexPathMArr withRowAnimation:UITableViewRowAnimationFade];
+}
+
 - (void)cellExchangeWithTeamName:(NSString *)teamName refreshIndex:(NSInteger)refreshIndex{
     // 新的模型
     Model *newModel = nil;
