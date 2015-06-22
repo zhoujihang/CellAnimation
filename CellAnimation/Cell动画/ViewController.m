@@ -44,8 +44,87 @@
     if (self.oldArrayBeforeAnimate.count <1) return;
     
     NSLog(@"排序前：%@",self.oldArray);
-    [self cellExchangeWithTeamName:[self.oldArrayBeforeAnimate[0] teamName] oldIndexBeforeAnimate:0];
+//    [self cellExchangeWithTeamName:[self.oldArrayBeforeAnimate[0] teamName] oldIndexBeforeAnimate:0];
+    
+    // 将新数组排序
+    [self cellExchangeWithTeamName:[self.refreshArray[0] teamName] refreshIndex:0];
+    
 }
+- (void)cellExchangeWithTeamName:(NSString *)teamName refreshIndex:(NSInteger)refreshIndex{
+    // 新的模型
+    Model *newModel = nil;
+    for (Model *model in self.refreshArray) {
+        if ([model.teamName isEqualToString:teamName]) {
+            newModel = model;
+            break;
+        }
+    }
+    // 新的位置
+    NSIndexPath *newIndexPath = [NSIndexPath indexPathForRow:newModel.teamOrder.integerValue-1 inSection:0];
+    
+    // 旧的模型
+    Model *oldModel = nil;
+    for (Model *model in self.oldArray) {
+        if ([model.teamName isEqualToString:teamName]) {
+            oldModel = model;
+            break;
+        }
+    }
+    // 旧的的位置
+    NSIndexPath *oldIndexPath = nil;
+    if (oldModel){
+        oldIndexPath = [NSIndexPath indexPathForRow:[self.oldArray indexOfObject:oldModel] inSection:0];
+        
+        if (oldIndexPath.row == newIndexPath.row){
+            // 如果位置没变化直接开始下一个cell的移动
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                if (refreshIndex+1 <= self.refreshArray.count-1) {
+                    [self cellExchangeWithTeamName:[self.refreshArray[refreshIndex+1] teamName] refreshIndex:refreshIndex+1];
+                }
+            });
+            return;
+        }
+        
+    }else{
+        // 新加入的球队,设置成旧模型中的最后一个，排名也暂时设置为最后一位
+        [self.oldArray addObject:[newModel copy]];
+        [[self.oldArray lastObject] setTeamOrder:@(self.oldArray.count)];
+        oldIndexPath = [NSIndexPath indexPathForRow:self.oldArray.count-1 inSection:0];
+        // 执行cell交换动画之前，先将新增的cell插入到tableview中
+        [self.tableView insertRowsAtIndexPaths:@[oldIndexPath] withRowAnimation:UITableViewRowAnimationFade];
+    }
+    
+    // 模型交换位置,并更新排名
+    NSNumber *tempRange = [self.oldArray[oldIndexPath.row] teamOrder];
+    [self.oldArray[oldIndexPath.row] setTeamOrder:newModel.teamOrder];
+    [self.oldArray[newIndexPath.row] setTeamOrder:tempRange];
+    [self.oldArray exchangeObjectAtIndex:oldIndexPath.row withObjectAtIndex:newIndexPath.row];
+    NSLog(@"排序后：%@",self.oldArray);
+    // 视图交换位置
+    [UIView animateWithDuration:0.6 animations:^{
+        [self.tableView moveRowAtIndexPath:oldIndexPath toIndexPath:newIndexPath];
+        if (newIndexPath.row > oldIndexPath.row) {
+            // 向下挪动     move方法不会触发 tableview的跟新视图的方法
+            [self.tableView moveRowAtIndexPath:[NSIndexPath indexPathForRow:newIndexPath.row-1 inSection:0] toIndexPath:oldIndexPath];
+        }else{
+            // 向上挪动
+            [self.tableView moveRowAtIndexPath:[NSIndexPath indexPathForRow:newIndexPath.row+1 inSection:0] toIndexPath:oldIndexPath];
+        }
+    } completion:^(BOOL finished) {
+        // 开始下一个cell的移动
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            // 动画完成后更新视图
+            [self.tableView reloadRowsAtIndexPaths:@[oldIndexPath,newIndexPath] withRowAnimation:UITableViewRowAnimationNone];
+            // 判断是否还需要继续
+            if (refreshIndex+1 <= self.refreshArray.count-1) {
+                [self cellExchangeWithTeamName:[self.refreshArray[refreshIndex+1] teamName] refreshIndex:refreshIndex+1];
+            }
+        });
+    }];
+
+    
+}
+
 - (void)cellExchangeWithTeamName:(NSString *)teamName oldIndexBeforeAnimate:(NSInteger)oldIndex{
     // 旧的模型
     Model *oldModel = nil;
@@ -167,6 +246,10 @@
             Model *model = [Model modelWithDict:dict];
             [arrayModels addObject:model];
         }
+        // 按照 obj1.teamOrder 排序数组
+        [arrayModels sortUsingComparator:^NSComparisonResult(Model *obj1, Model *obj2) {
+            return obj1.teamOrder.integerValue > obj2.teamOrder.integerValue ? NSOrderedDescending : obj1.teamOrder.integerValue == obj2.teamOrder.integerValue ? NSOrderedSame : NSOrderedAscending;
+        }];
         _refreshArray = arrayModels;
     }
     return  _refreshArray;

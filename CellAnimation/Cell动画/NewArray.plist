@@ -22,7 +22,7 @@
 	</dict>
 	<dict>
 		<key>teamOrder</key>
-		<integer>4</integer>
+		<integer>7</integer>
 		<key>teamName</key>
 		<string>青岛鲁能</string>
 	</dict>
@@ -34,9 +34,21 @@
 	</dict>
 	<dict>
 		<key>teamOrder</key>
-		<integer>6</integer>
+		<integer>8</integer>
 		<key>teamName</key>
 		<string>河南建业</string>
+	</dict>
+	<dict>
+		<key>teamOrder</key>
+		<integer>4</integer>
+		<key>teamName</key>
+		<string>北京黑马</string>
+	</dict>
+	<dict>
+		<key>teamOrder</key>
+		<integer>6</integer>
+		<key>teamName</key>
+		<string>广州小码</string>
 	</dict>
 </array>
 </plist>

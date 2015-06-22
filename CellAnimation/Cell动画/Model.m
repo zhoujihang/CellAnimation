@@ -22,7 +22,13 @@
 {
     return [[self alloc] initWithDict:dict];
 }
-
+- (id)copyWithZone:(NSZone *)zone{
+    Model *copyModel = [[Model alloc]init];
+    copyModel.teamName = [self.teamName copy];
+    copyModel.teamOrder = [self.teamOrder copy];
+    copyModel.needMove = self.needMove;
+    return copyModel;
+}
 - (NSString *)description{
     return [NSString stringWithFormat:@"%@ - %ld",self.teamName,self.teamOrder.integerValue];
 }

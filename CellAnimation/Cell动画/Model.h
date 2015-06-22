@@ -8,10 +8,10 @@
 
 #import <Foundation/Foundation.h>
 
-@interface Model : NSObject
+@interface Model : NSObject <NSCopying>
 
 /*!  排名*/
-@property(nonatomic,assign)NSNumber *teamOrder;
+@property(nonatomic,strong)NSNumber *teamOrder;
 /*!  球队名称*/
 @property(nonatomic,strong)NSString *teamName;
 
