@@ -39,13 +39,12 @@
 
 - (void)cellAnimation{
     NSLog(@"排序前：%@",self.oldArray);
-    [UIView animateWithDuration:0.6 animations:^{
-        // 先清理已经被淘汰了的球队
-        [self clearEliminatedTeam];
-    } completion:^(BOOL finished) {
-        // 再从旧的排名过渡到新的排名
+    // 先清理已经被淘汰了的球队
+    [self clearEliminatedTeam];
+    // 再从旧的排名过渡到新的排名
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self cellExchangeWithTeamName:[self.refreshArray[0] teamName] refreshIndex:0];
-    }];
+    });
     
 }
 // 将未出现在新排名中的球队删掉
@@ -70,7 +69,20 @@
         }
     }
     [self.oldArray removeObjectsInArray:eliminatedOldModel];
-    [self.tableView deleteRowsAtIndexPaths:eliminatedIndexPathMArr withRowAnimation:UITableViewRowAnimationFade];
+    
+    // 删除后重新排名
+    NSMutableArray *reloadIndexPathMArr = [NSMutableArray array];
+    for (NSInteger i=0; i<self.oldArray.count; i++) {
+        Model *reOrderModel = self.oldArray[i];
+        reOrderModel.teamOrder = @(i+1);
+        [reloadIndexPathMArr addObject:[NSIndexPath indexPathForRow:i inSection:0]];
+    }
+    
+    [UIView animateWithDuration:0.6 animations:^{
+        [self.tableView deleteRowsAtIndexPaths:eliminatedIndexPathMArr withRowAnimation:UITableViewRowAnimationFade];
+    } completion:^(BOOL finished) {
+        [self.tableView reloadRowsAtIndexPaths:reloadIndexPathMArr withRowAnimation:UITableViewRowAnimationNone];
+    }];
 }
 
 - (void)cellExchangeWithTeamName:(NSString *)teamName refreshIndex:(NSInteger)refreshIndex{
@@ -101,6 +113,7 @@
         if (oldIndexPath.row == newIndexPath.row){
             // 如果位置没变化直接开始下一个cell的移动
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                // 动画完成后更新视图
                 if (refreshIndex+1 <= self.refreshArray.count-1) {
                     [self cellExchangeWithTeamName:[self.refreshArray[refreshIndex+1] teamName] refreshIndex:refreshIndex+1];
                 }
@@ -110,33 +123,31 @@
     }else{
         // 新加入的球队,设置成旧模型中的最后一个，排名也暂时设置为最后一位
         [self.oldArray addObject:[newModel copy]];
-        [[self.oldArray lastObject] setTeamOrder:@(self.oldArray.count)];
+        oldModel = [self.oldArray lastObject];
+        [oldModel setTeamOrder:@(self.oldArray.count)];
         oldIndexPath = [NSIndexPath indexPathForRow:self.oldArray.count-1 inSection:0];
-        // 执行cell交换动画之前，先将新增的cell插入到tableview中
+        // 执行cell动画之前，先将新增的cell插入到tableview中
         [self.tableView insertRowsAtIndexPaths:@[oldIndexPath] withRowAnimation:UITableViewRowAnimationFade];
     }
-    
-    // 模型交换位置,并更新球队的排名
-    NSNumber *tempRange = [self.oldArray[oldIndexPath.row] teamOrder];
-    [self.oldArray[oldIndexPath.row] setTeamOrder:newModel.teamOrder];
-    [self.oldArray[newIndexPath.row] setTeamOrder:tempRange];
-    [self.oldArray exchangeObjectAtIndex:oldIndexPath.row withObjectAtIndex:newIndexPath.row];
+    [self.oldArray removeObject:oldModel];
+    [self.oldArray insertObject:[newModel copy] atIndex:newIndexPath.row];
+    // -------- 更新后面所有视图的排名，这样体验比较好
+    NSMutableArray *reloadIndexPathMArr = [NSMutableArray array];
+    [reloadIndexPathMArr addObject:newIndexPath];
+    for (NSInteger i=newIndexPath.row+1; i<self.oldArray.count; i++) {
+        Model *reOrderModel = self.oldArray[i];
+        reOrderModel.teamOrder = @(i+1);
+        [reloadIndexPathMArr addObject:[NSIndexPath indexPathForRow:i inSection:0]];
+    }
     NSLog(@"排序后：%@",self.oldArray);
-    // 视图交换位置
+    // 刷新cell视图
     [UIView animateWithDuration:0.6 animations:^{
         [self.tableView moveRowAtIndexPath:oldIndexPath toIndexPath:newIndexPath];
-        if (newIndexPath.row > oldIndexPath.row) {
-            // 向下挪动     move方法不会触发 tableview的跟新视图的方法
-            [self.tableView moveRowAtIndexPath:[NSIndexPath indexPathForRow:newIndexPath.row-1 inSection:0] toIndexPath:oldIndexPath];
-        }else{
-            // 向上挪动
-            [self.tableView moveRowAtIndexPath:[NSIndexPath indexPathForRow:newIndexPath.row+1 inSection:0] toIndexPath:oldIndexPath];
-        }
     } completion:^(BOOL finished) {
         // 开始下一个cell的移动
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             // 动画完成后更新视图
-            [self.tableView reloadRowsAtIndexPaths:@[oldIndexPath,newIndexPath] withRowAnimation:UITableViewRowAnimationNone];
+            [self.tableView reloadRowsAtIndexPaths:reloadIndexPathMArr withRowAnimation:UITableViewRowAnimationNone];
             // 判断是否还需要继续
             if (refreshIndex+1 <= self.refreshArray.count-1) {
                 [self cellExchangeWithTeamName:[self.refreshArray[refreshIndex+1] teamName] refreshIndex:refreshIndex+1];

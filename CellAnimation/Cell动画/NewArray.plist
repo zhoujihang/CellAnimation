@@ -4,13 +4,13 @@
 <array>
 	<dict>
 		<key>teamOrder</key>
-		<integer>1</integer>
+		<integer>2</integer>
 		<key>teamName</key>
 		<string>天津泰达</string>
 	</dict>
 	<dict>
 		<key>teamOrder</key>
-		<integer>2</integer>
+		<integer>1</integer>
 		<key>teamName</key>
 		<string>上海申花</string>
 	</dict>
